@@ -1,13 +1,17 @@
 FROM python:3.10
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /code
 
-RUN curl -sSL https://install.python-poetry.org | python3 -
+RUN curl -sSL https://install.python-poetry.org | python -
 
-COPY ./requirements.txt /code/requirements.txt
+COPY pyproject.toml /code/
+COPY poetry.lock /code/
 
-RUN poetry install
+RUN pip install poetry
+RUN poetry export --without-hashes --format=requirements.txt > requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-COPY ./app /code/app
+COPY . /code/
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80", "--proxy-headers"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80", "--proxy-headers"]
