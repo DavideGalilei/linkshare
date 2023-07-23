@@ -1,0 +1,250 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&display=swap');
+
+html {
+    background-color: var(--background);
+    accent-color: var(--theme-color);
+    font-family: 'Fira Code', monospace;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    justify-content: center;
+}
+
+h1 {
+    margin-left: 1rem;
+}
+
+.main, .action {
+    display: flex;
+    margin: 0 auto;
+    flex-direction: column;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.action {
+    width: 100%;
+}
+
+.main {
+    width: fit-content;
+}
+
+.qr-container {
+    display: flex;
+    position: relative;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    border-radius: 10%;
+    overflow: hidden;
+    background-color: #fff;
+}
+
+.switcher {
+    position: relative;
+    cursor: pointer;
+    display: inline-flex;
+    margin: 0 auto;
+}
+
+.switcher .inner {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: .5em;
+    justify-content: center;
+    background-color: var(--current-line);
+    border-radius: 1rem;
+}
+
+.switcher .inner > div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    width: 7rem;
+    height: 7rem;
+    text-align: center;
+    padding: .3rem;
+    z-index: 1;
+    transition: color .6s;
+    font-size: medium;
+}
+
+/*.switcher .inner > div:not(.selected) {
+    color: gray;
+}*/
+
+.switcher .selector {
+    position: absolute;
+    background-color: var(--comment);
+    transition: all 0.4s ease;
+    border-radius: .5em;
+    margin: .7em;
+}
+
+.scanner {
+    width: 100%;
+    height: 30vh;
+    border: solid .3rem var(--pink);
+    border-radius: 4vh;
+}
+
+.content-container {
+    border: var(--purple) solid .2rem;
+    border-radius: .8rem;
+    padding: .3rem;
+    background-color: var(--current-line);
+    max-width: 95vw;
+}
+
+.content-container pre, code {
+    max-width: 100%;
+}
+
+.spin {
+    animation: pulse 1s ease-in-out alternate infinite;
+}
+
+.content-container p {
+    margin: 0 auto;
+}
+
+.spin .waiting-for-link {
+    color: var(--purple);
+    animation: pulse 1s ease-in-out alternate infinite;
+}
+
+@keyframes pulse {
+    from {
+        color: var(--comment);
+        border-color: var(--purple);
+    }
+    to {
+        color: var(--foreground);
+        border-color: var(--pink);
+    }
+}
+
+.notepad {
+    display: flex;
+    white-space: pre-wrap;
+    height: fit-content;
+    border: solid .2rem var(--comment);
+    flex-direction: column;
+    outline: none;
+}
+
+.notepad:focus {
+    border-color: var(--theme-color);
+}
+
+.notepad::before {
+  counter-reset: listing;
+}
+
+.notepad div {
+  counter-increment: listing;
+  text-align: left;
+  float: left;
+  clear: left;
+}
+
+.notepad div::before {
+  content: counter(listing) ". ";
+  display: inline-block;
+  float: left;
+  height: 1em;
+  padding-left: auto;
+  margin-left: auto;
+  text-align: right;
+    border-right: solid var(--current-line);
+    margin-right: 1em;
+}
+
+.content-container pre {
+    margin: 0 auto;
+    border-radius: .3rem;
+    overflow: hidden;
+}
+
+.copy, .use-code {
+    display: inline-flex;
+    border-radius: .7rem;
+    border: solid .2rem var(--theme-color);
+    flex-direction: row;
+    overflow: hidden;
+    align-items: center;
+    height: 3.5rem;
+}
+
+.copy input, .use-code input {
+    margin: 0;
+    padding: .7rem;
+    text-align: center;
+    font-weight: bolder;
+    font-size: medium;
+    min-width: 0;
+    width: 100%;
+}
+
+.copy label, .use-code label {
+    display: flex;
+    padding-left: .7rem;
+    flex-direction: row;
+    align-items: center;
+    gap: .7rem;
+    width: 100%;
+}
+
+.copy button, .use-code button {
+    display: inline-block;
+    font-weight: bold;
+    width: 20%;
+    height: 100%;
+    margin: 0 auto;
+    border: 0;
+    outline: 0;
+}
+
+.error p {
+    margin: 0 auto;
+}
+
+.error p::before {
+    content: "⚠️";
+    margin-right: 1em;
+}
+
+.error {
+    background-color: rgba(var(--red-rgb), .1);
+    border: solid .2rem var(--red);
+    padding: .7rem;
+}
+
+.area, textarea {
+    width: 80vw;
+    display: inline-flex;
+    flex-direction: column;
+    min-height: fit-content;
+}
+
+textarea {
+    word-wrap: break-word;
+}
+
+.area-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.area-container button {
+    height: 2.5rem;
+    width: 100%;
+}

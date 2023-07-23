@@ -1,0 +1,40 @@
+/* https://draculatheme.com/contribute */
+
+:root {
+    --background: #282a36;
+    --current-line: #44475a;
+    --foreground: #f8f8f2;
+    --comment: #6272a4;
+    --cyan: #8be9fd;
+    --green: #50fa7b;
+    --orange: #ffb86c;
+    --pink: #ff79c6;
+    --purple: #bd93f9;
+    --red: #ff5555;
+    --red-rgb: 255, 85, 85;
+
+    --yellow: #f1fa8c;
+
+    --theme-color: var(--pink);
+}
+
+html, body {
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+    -webkit-tap-highlight-color: transparent;
+}
