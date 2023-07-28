@@ -70,7 +70,7 @@ async def new(ws: WebSocket):
                 await ws.close()
                 return
 
-            logger.info("Received data: {data}", data=data)
+            # logger.info("Received data: {data}", data=data)
 
             match data["@type"]:
                 case "pair":
