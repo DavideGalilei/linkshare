@@ -301,6 +301,7 @@ async function makeQR(token) {
 
   let qrScanner;
   try {
+    center.append(scanner);
     qrScanner = new QrScanner(
       scanner,
       async (result) => {
@@ -315,7 +316,6 @@ async function makeQR(token) {
     );
 
     await qrScanner.start();
-    center.append(scanner);
   } catch (e) {
     let info = document.createElement("p");
     info.classList.add("error");
