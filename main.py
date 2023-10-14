@@ -1,10 +1,13 @@
+import asyncio
 import secrets
 import string
 from collections import defaultdict
 from dataclasses import dataclass
+from datetime import timedelta
+from typing import Awaitable, Callable, TypeVar
 from uuid import UUID, uuid4
 
-from fastapi import FastAPI, Request, WebSocket
+from fastapi import FastAPI, WebSocket
 from limits import parse, storage, strategies
 from loguru import logger
 from starlette.config import Config
@@ -13,7 +16,7 @@ from starlette.websockets import WebSocketDisconnect
 
 config = Config(".env")
 
-ENVIRONMENT = config("ENVIRONMENT")
+ENVIRONMENT = config("ENVIRONMENT", cast=str, default="production")
 SHOW_DOCS_ENVIRONMENT = ("local", "staging")
 
 app_configs = {}
@@ -30,13 +33,19 @@ app = FastAPI(
 )
 memory = storage.MemoryStorage()
 limiter = strategies.MovingWindowRateLimiter(storage=memory)
-rate = parse("20/minute")
+rate = parse(config("RATE", cast=str, default="20/minute"))
+INACTIVITY_TIMEOUT = config(
+    "INACTIVITY_TIMEOUT",
+    cast=int,
+    default=timedelta(minutes=5).total_seconds(),
+)
+KEY_LENGTH = config("KEY_LENGTH", cast=int, default=8)
 
 
-def generate_token(length: int = 8) -> str:
+def generate_token(length: int = KEY_LENGTH) -> str:
     return "".join(
-        secrets.choice(string.ascii_uppercase + string.digits + "()[]{}+!?$=#@")
-        for i in range(length)
+        secrets.choice((string.ascii_uppercase + string.digits + "()[]{}+!?$=#@"))
+        for _ in range(length)
     )
 
 
@@ -106,6 +115,18 @@ rendezvous_nodes: dict[UUID, Rendezvous] = {}
 connections: defaultdict[Token, Client] = {}
 
 
+_tasks = set()
+T = TypeVar("T")
+
+
+def background(coro: Callable[..., Awaitable[T]]) -> asyncio.Task[T]:
+    loop = asyncio.get_event_loop()
+    task = loop.create_task(coro)
+    _tasks.add(task)
+    task.add_done_callback(_tasks.remove)
+    return task
+
+
 @app.websocket("/ws/new")
 async def new(ws: WebSocket):
     if not ws.client.host:
@@ -128,11 +149,31 @@ async def new(ws: WebSocket):
         logger.error("Failed to generate token")
         return
 
+    async def disconnect(client: Client):
+        await asyncio.sleep(INACTIVITY_TIMEOUT)
+        logger.info("Disconnecting inactive client")
+        if client.rendezvous:
+            await client.rendezvous.dispose(client)
+        else:
+            try:
+                await client.conn.close()
+            except Exception as e:
+                logger.error("Ignoring: {e}", e=e)
+
+    disconnect_task = None
+
+    async def trigger_disconnect():
+        nonlocal disconnect_task
+        if disconnect_task is not None:
+            disconnect_task.cancel()
+        disconnect_task = background(disconnect(this))
+
     try:
         await ws.accept()
         logger.info("Client connected")
         this = Client(conn=ws, token=token)
         connections[token] = this
+        await trigger_disconnect()
 
         logger.info("Generated token: {token}", token=token)
         await ws.send_json(
@@ -154,6 +195,7 @@ async def new(ws: WebSocket):
 
             match data["@type"]:
                 case "pair":
+                    await trigger_disconnect()
                     logger.info("Scanned token and connected")
                     target = data["target"]
                     if not isinstance(target, str):
@@ -186,6 +228,7 @@ async def new(ws: WebSocket):
 
                     await ws.send_json({"@type": "connected"})
                 case "content":
+                    await trigger_disconnect()
                     await this.rendezvous.broadcast(
                         {
                             "@type": "content",
