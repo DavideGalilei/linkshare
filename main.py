@@ -77,7 +77,7 @@ class Rendezvous:
             await client.conn.send_json({"@type": "disconnected"})
             await client.conn.close()
         except Exception as e:
-            logger.error("Ignoring {e}", e)
+            logger.error("Ignoring {e}", e=e)
 
         # If there is only one stream left, dispose it too
         # if len(self.streams) == 1:
@@ -185,7 +185,7 @@ async def new(ws: WebSocket):
                 await this.rendezvous.dispose(this)
             await this.conn.close()
         except Exception as e:
-            logger.error("Ignoring {e}", e)
+            logger.error("Ignoring {e}", e=e)
         connections.pop(token, None)
 
 
