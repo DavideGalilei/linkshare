@@ -75,6 +75,11 @@ function connect() {
           break;
         }
         case "connected": {
+          scanner?.remove();
+          qrScanner?.stop();
+          qrScanner?.destroy();
+          scanButton?.remove();
+
           document.querySelector(".use-code")?.remove();
           cleanErrors();
 
@@ -212,6 +217,9 @@ const throttle = (callback, time) => {
   }, time);
 };
 
+let qrScanner;
+let scanner;
+let scanButton;
 async function makeQR(token) {
   if (!token) {
     console.log("No token found...");
@@ -270,15 +278,12 @@ async function makeQR(token) {
   }
 
   async function callback(token) {
-    scanner?.remove();
-    qrScanner?.stop();
-    qrScanner?.destroy();
-
     if (token === appState.token) {
       cleanErrors();
       action.appendChild(getTemplate("this-is-your-code"));
       return;
     }
+
     console.log("Sending pair request", ws);
     await ws.send(
       JSON.stringify({
@@ -300,35 +305,42 @@ async function makeQR(token) {
     }
   });
 
-  let scanner = document.createElement("video");
+  scanner = document.createElement("video");
   scanner.classList.add("scanner");
 
-  let qrScanner;
-  try {
-    center.append(scanner);
-    qrScanner = new QrScanner(
-      scanner,
-      async (result) => {
-        console.log("decoded qr code: ", result);
-        await callback(result["data"]); // scanned token
-      },
-      {
-        returnDetailedScanResult: true,
-        highlightScanRegion: true,
-        highlightCodeOutline: true,
-      }
-    );
+  scanButton = document.createElement("button");
+  scanButton.classList.add("scan-button");
+  scanButton.innerText = "Scan with camera";
+  center.append(scanButton);
 
-    await qrScanner.start();
-  } catch (e) {
-    let info = document.createElement("p");
-    info.classList.add("error");
-    info.innerText = `Camera unavailable: ${e}`;
-    action.append(info);
-    scanner.remove();
-    qrScanner?.stop();
-    qrScanner?.destroy();
-  }
+  scanButton.addEventListener("click", async () => {
+    scanButton?.remove();
+    try {
+      center.append(scanner);
+      qrScanner = new QrScanner(
+        scanner,
+        async (result) => {
+          console.log("decoded qr code: ", result);
+          await callback(result["data"]); // scanned token
+        },
+        {
+          returnDetailedScanResult: true,
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+        }
+      );
+
+      await qrScanner.start();
+    } catch (e) {
+      let info = document.createElement("p");
+      info.classList.add("error");
+      info.innerText = `Camera unavailable: ${e}`;
+      action.append(info);
+      scanner?.remove();
+      qrScanner?.stop();
+      qrScanner?.destroy();
+    }
+  });
 
   action
     .querySelector(".copy-button")
