@@ -1,0 +1,20 @@
+version: '3.8'
+services:
+  linkshare:
+    image: linkshare
+    container_name: linkshare
+    environment:
+      - PYTHONUNBUFFERED=1
+    working_dir: /code
+    networks:
+      - nginx_default
+    ports:
+      - 127.0.0.1:8000:80
+    restart: unless-stopped
+    build: .
+    # volumes:
+    #   - ./data:/code/data
+
+networks:
+  nginx_default:
+    external: true

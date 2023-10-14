@@ -1,133 +1,125 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="application-name" content="LinkShare"/>
-    <meta name="keywords" content="link,links,share,sharing,privacy,qrcode,free,web,online"/>
-    <meta name="referrer" content="same-origin"/>
-    <meta name="theme-color" content="var(--theme-color)"/>
-    <meta name="color-scheme" content="dark"/>
-    <meta name="viewport"
-          content="width=device-width, user-scalable=yes, initial-scale=1.0, maximum-scale=2.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="application-name" content="LinkShare" />
+    <meta
+      name="keywords"
+      content="link,links,share,sharing,privacy,qrcode,free,web,online"
+    />
+    <meta name="referrer" content="same-origin" />
+    <meta name="theme-color" content="var(--theme-color)" />
+    <meta name="color-scheme" content="dark" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=yes, initial-scale=1.0, maximum-scale=2.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
 
-    <meta name="description" content="🔒 Share links and code snippets seamlessly."/>
+    <meta
+      name="description"
+      content="🔒 Share links and code snippets seamlessly."
+    />
     <!--<meta
             property="og:image"
             content="https://developer.mozilla.org/mdn-social-share.png"/>-->
     <meta
-            property="og:description"
-            content="🔒 Share links and code snippets seamlessly."/>
-    <meta property="og:title" content="🧁 LinkShare"/>
-    <meta name="twitter:title" content="🧁 LinkShare"/>
+      property="og:description"
+      content="🔒 Share links and code snippets seamlessly."
+    />
+    <meta property="og:title" content="🧁 LinkShare" />
+    <meta name="twitter:title" content="🧁 LinkShare" />
 
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="manifest" href="/site.webmanifest">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
 
     <!--<meta name="darkreader-lock" />-->
     <title>LinkShare</title>
 
-    <link href="root.css" rel="stylesheet">
-    <link href="style.css" rel="stylesheet" title="Default Style"/>
-    <link href="basic.css" rel="alternate stylesheet" title="Basic"/>
+    <link href="root.css" rel="stylesheet" />
+    <link href="style.css" rel="stylesheet" title="Default Style" />
+    <link href="basic.css" rel="alternate stylesheet" title="Basic" />
 
     <script
-            src="https://unpkg.com/@bitjson/qr-code@1.0.2/dist/qr-code.js"
-            integrity="sha384-6tFGWieLoO/I0wZXrK9oVlzTYKsiMA4skHQ/G5qKQIPquxlRT8PHvBJrgUaF9PDO"
-            crossorigin="anonymous"
-            referrerpolicy="no-referrer"></script>
+      src="https://unpkg.com/@bitjson/qr-code@1.0.2/dist/qr-code.js"
+      integrity="sha384-6tFGWieLoO/I0wZXrK9oVlzTYKsiMA4skHQ/G5qKQIPquxlRT8PHvBJrgUaF9PDO"
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
 
-    <link rel="stylesheet" href="dracula.css">
+    <link rel="stylesheet" href="dracula.css" />
 
     <script src="script.js" charset="UTF-8" type="module" defer></script>
-</head>
-<body>
+  </head>
+  <body>
     <h1>🧁 LinkShare</h1>
-    <a href="/privacy.html">Privacy policy</a>
 
     <div class="main">
-        <div class="switcher noselect" data-state="0">
-            <selector class="selector"></selector>
-            <div class="inner">
-                <div>Receive</div>
-                <div>Send</div>
-            </div>
+      <div class="noselect">
+        <p>Connect to another device</p>
+      </div>
+
+      <div class="action">
+        <!-- Modified in JS -->
+      </div>
+
+      <template id="code-editor">
+        <div class="content-container spin">
+          <p class="waiting-for-link">Waiting for messages...</p>
         </div>
 
-        <div class="action">
-            <div class="qr-container">
-                <qr-code
-                    id="qr"
-                    contents=""
-                    module-color="black"
-                    position-ring-color="black"
-                    position-center-color="black"
-                    mask-x-to-y-ratio="1"
-                    squares="false"
-                    style="
-                        background-color: #fff;
-                        margin: 0;
-                        width: 100%;
-                        height: 100%;
-                    "
-                >
-                </qr-code>
-            </div>
+        <div class="area-container">
+          <label class="area">
+            <textarea
+              class="notepad"
+              contenteditable="true"
+              tabindex="1"
+              placeholder="Insert text here..."
+            ></textarea>
+          </label>
+          <button class="send-button" tabindex="2">Send</button>
         </div>
+      </template>
 
-        <template id="receive-link">
-            <div class="content-container spin">
-                <p class="waiting-for-link">Waiting for link...</p>
-            </div>
-        </template>
+      <template id="copy-code">
+        <div class="center">
+          <div class="copy">
+            <label>Your code:</label>
+            <input class="token" type="text" readonly />
+            <button class="copy-button">Copy</button>
+          </div>
+          <div class="use-code">
+            <label> Connect to someone: </label>
+            <input
+              class="code-input"
+              type="text"
+              style="text-transform: uppercase"
+              pattern="[A-Za-z0-9]{5}"
+              required
+              placeholder="Type..."
+            />
+            <button class="go-button">GO!</button>
+          </div>
+        </div>
+      </template>
 
-        <template id="code-editor">
-            <div class="area-container">
-                <label class="area">
-                    <textarea
-                            class="notepad"
-                            contenteditable="true"
-                            tabindex="1"
-                            placeholder="Insert text here..."></textarea>
-                </label>
-                <button class="send-button" tabindex="2">Send</button>
-            </div>
-        </template>
+      <template id="code-not-found">
+        <div class="error">
+          <p>
+            Code not found: <b><span class="code"></span></b>
+          </p>
+        </div>
+      </template>
 
-        <template id="copy-code">
-            <div class="copy">
-                <label>Code: <input class="token" type="text" readonly></label>
-                <button>Copy</button>
-            </div>
-        </template>
+      <template id="this-is-your-code">
+        <div class="error">
+          <p>You can't send content to your own code</p>
+        </div>
+      </template>
 
-        <template id="success">
-            <p>Data sent!</p>
-        </template>
-
-        <template id="use-code">
-            <div class="use-code">
-                <label>
-                    Code:
-                    <input type="text" style="text-transform: uppercase" pattern="[A-Za-z0-9]{5}" required>
-                </label>
-                <button>GO!</button>
-            </div>
-        </template>
-
-        <template id="code-not-found">
-            <div class="error">
-                <p>Code not found: <b><span class="code"></span></b></p>
-            </div>
-        </template>
-
-        <template id="this-is-your-code">
-            <div class="error">
-                <p>You can't send content to your own code</p>
-            </div>
-        </template>
+      <a href="/privacy.html">Privacy policy</a>
     </div>
-</body>
+  </body>
 </html>

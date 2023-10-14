@@ -1,16 +1,24 @@
-FROM python:3.10
+FROM python:3.10-alpine
 ENV PYTHONUNBUFFERED=1
 
-WORKDIR /code
+ENV PYTHONFAULTHANDLER=1 \
+  PYTHONUNBUFFERED=1 \
+  PYTHONHASHSEED=random \
+  PIP_NO_CACHE_DIR=off \
+  PIP_DISABLE_PIP_VERSION_CHECK=on \
+  PIP_DEFAULT_TIMEOUT=100
 
+RUN apk add --no-cache curl
 RUN curl -sSL https://install.python-poetry.org | python -
+ENV PATH "${PATH}:/root/.local/bin"
 
+WORKDIR /code
 COPY pyproject.toml /code/
 COPY poetry.lock /code/
+RUN poetry config virtualenvs.create false
+RUN poetry install --no-dev --no-interaction --no-ansi --no-cache
 
-RUN pip install poetry
-RUN poetry export --without-hashes --format=requirements.txt > requirements.txt
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+EXPOSE 80
 
 COPY . /code/
 

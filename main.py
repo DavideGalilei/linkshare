@@ -1,6 +1,8 @@
+from collections import defaultdict
 import secrets
 import string
 from dataclasses import dataclass
+from uuid import UUID, uuid4
 
 from fastapi import FastAPI, WebSocket
 from loguru import logger
@@ -32,27 +34,88 @@ def generate_token(length: int = 5) -> str:
     )
 
 
+Token = str
+
+
+class Rendezvous:
+    def __init__(self, uuid: UUID):
+        self.uuid = uuid
+        self.streams: dict[Token, Client] = {}
+        rendezvous_nodes[uuid] = self
+
+    async def add(self, client: "Client"):
+        client.rendezvous = self
+        self.streams[client.token] = client
+        logger.info(
+            "Rendezvous {uuid} has {n} streams",
+            uuid=self.uuid,
+            n=len(self.streams),
+        )
+
+    async def broadcast(self, data: dict):
+        for client in self.streams.values():
+            try:
+                await client.conn.send_json(data)
+            except Exception as e:
+                logger.error("Disposing bad client", e)
+                await self.dispose(client)
+
+    async def dispose(self, client: "Client"):
+        client.rendezvous = None
+        self.streams.pop(client, None)
+        if not self.streams:
+            rendezvous_nodes.pop(self.uuid, None)
+            logger.info("Rendezvous {uuid} disposed", uuid=self.uuid)
+        else:
+            logger.info(
+                "Rendezvous {uuid} has {n} streams",
+                uuid=self.uuid,
+                n=len(self.streams),
+            )
+
+        try:
+            await client.conn.send_json({"@type": "disconnected"})
+            await client.conn.close()
+        except Exception as e:
+            logger.error("Ignoring {e}", e)
+
+        # If there is only one stream left, dispose it too
+        if len(self.streams) == 1:
+            for client in self.streams.values():
+                await self.dispose(client)
+
+
 @dataclass(init=True, repr=True)
 class Client:
     conn: WebSocket
-    state: int = 0
+    token: Token
     received: bool = False
+    rendezvous: Rendezvous = None
+
+    def __hash__(self):
+        return hash(self.token)
 
 
-connections: dict[str, Client] = {}
+rendezvous_nodes: dict[UUID, Rendezvous] = {}
+connections: defaultdict[Token, Client] = {}
 
 
 @app.websocket("/ws/new")
 async def new(ws: WebSocket):
-    while (token := generate_token(length=5)) in connections:
-        pass
-
-    other = None
+    for _ in range(10):
+        token = generate_token()
+        if token not in connections:
+            break
+    else:
+        await ws.close(reason="Failed to generate token")
+        logger.error("Failed to generate token")
+        return
 
     try:
         await ws.accept()
         logger.info("Client connected")
-        connections[token] = Client(conn=ws, state=0)
+        this = Client(conn=ws, token=token)
+        connections[token] = this
 
         logger.info("Generated token: {token}", token=token)
         await ws.send_json(
@@ -83,10 +146,12 @@ async def new(ws: WebSocket):
 
                     if target not in connections:
                         logger.warning("Client sent invalid data: target not found")
-                        await ws.send_json({
-                            "@type": "code-not-found",
-                            "code": target,
-                        })
+                        await ws.send_json(
+                            {
+                                "@type": "code-not-found",
+                                "code": target,
+                            }
+                        )
                         continue
 
                     if target == token:
@@ -94,48 +159,33 @@ async def new(ws: WebSocket):
                         continue
 
                     other = connections[target]
-                    await other.conn.send_json(
-                        {
-                            "@type": "connected",
-                        }
-                    )
-                    await ws.send_json(
-                        {
-                            "@type": "pair-completed",
-                        }
-                    )
-                    other.received = False
+                    if other.rendezvous:
+                        await other.rendezvous.add(this)
+                    else:
+                        this.rendezvous = Rendezvous(uuid=uuid4())
+                        await this.rendezvous.add(this)
+                        await this.rendezvous.add(other)
+                        await other.conn.send_json({"@type": "connected"})
+
+                    await ws.send_json({"@type": "connected"})
                 case "content":
-                    other.received = True
-                    await other.conn.send_json(
+                    await this.rendezvous.broadcast(
                         {
                             "@type": "content",
                             "data": data["content"],
                         }
                     )
-                case "state":
-                    connections[token].state = int(data["state"])
-
-                    match data["state"]:
-                        case 0:  # Receive
-                            # User changed state, disconnect matching connection
-                            try:
-                                if other is not None:
-                                    await other.conn.close()
-                            except Exception as e:
-                                logger.error("Ignoring", e)
-                        case 1:  # Send
-                            ...
                 case unknown:
                     logger.info("Unknown type received: {unknown}", unknown=unknown)
     except WebSocketDisconnect:
         logger.info("Client disconnected")
     finally:
         try:
-            if other is not None and other.state == 0 and not other.received:
-                await other.conn.close()
+            if this.rendezvous:
+                await this.rendezvous.dispose(this)
+            await this.conn.close()
         except Exception as e:
-            logger.error("Ignoring", e)
+            logger.error("Ignoring {e}", e)
         connections.pop(token, None)
 
 
