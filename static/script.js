@@ -270,6 +270,10 @@ async function makeQR(token) {
   }
 
   async function callback(token) {
+    scanner?.remove();
+    qrScanner?.stop();
+    qrScanner?.destroy();
+
     if (token === appState.token) {
       cleanErrors();
       action.appendChild(getTemplate("this-is-your-code"));
