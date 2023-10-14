@@ -11,6 +11,7 @@ python = "^3.10"
 fastapi = "^0.100.0"
 uvicorn = {extras = ["standard"], version = "^0.23.1"}
 loguru = "^0.7.0"
+limits = "^3.6.0"
 
 
 [build-system]

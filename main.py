@@ -1,13 +1,14 @@
-from collections import defaultdict
 import secrets
 import string
+from collections import defaultdict
 from dataclasses import dataclass
 from uuid import UUID, uuid4
 
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, Request, WebSocket
+from limits import parse, storage, strategies
 from loguru import logger
-from starlette.staticfiles import StaticFiles
 from starlette.config import Config
+from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocketDisconnect
 
 config = Config(".env")
@@ -22,15 +23,20 @@ if ENVIRONMENT not in SHOW_DOCS_ENVIRONMENT:
     app_configs["redoc_url"] = None
     app_configs[" swagger_ui_oauth2_redirect_url"] = None
 
+
 app = FastAPI(
     title="LinkShare",
     **app_configs,
 )
+memory = storage.MemoryStorage()
+limiter = strategies.MovingWindowRateLimiter(storage=memory)
+rate = parse("20/minute")
 
 
-def generate_token(length: int = 5) -> str:
+def generate_token(length: int = 8) -> str:
     return "".join(
-        secrets.choice(string.ascii_uppercase + string.digits) for i in range(length)
+        secrets.choice(string.ascii_uppercase + string.digits + "()[]{}+!?$=#@")
+        for i in range(length)
     )
 
 
@@ -77,7 +83,7 @@ class Rendezvous:
             await client.conn.send_json({"@type": "disconnected"})
             await client.conn.close()
         except Exception as e:
-            logger.error("Ignoring {e}", e=e)
+            logger.error("Ignoring: {e}", e=e)
 
         # If there is only one stream left, dispose it too
         # if len(self.streams) == 1:
@@ -102,6 +108,17 @@ connections: defaultdict[Token, Client] = {}
 
 @app.websocket("/ws/new")
 async def new(ws: WebSocket):
+    if not ws.client.host:
+        await ws.close(reason="No host")
+        logger.error("No host")
+        return
+
+    logger.info("Client connected {host}", host=ws.client.host)
+    if not limiter.hit(rate, "connect", ws.client.host):
+        await ws.close(reason="Too many connections")
+        logger.error("Too many connections")
+        return
+
     for _ in range(10):
         token = generate_token()
         if token not in connections:
@@ -185,7 +202,7 @@ async def new(ws: WebSocket):
                 await this.rendezvous.dispose(this)
             await this.conn.close()
         except Exception as e:
-            logger.error("Ignoring {e}", e=e)
+            logger.error("Ignoring: {e}", e=e)
         connections.pop(token, None)
 
 
