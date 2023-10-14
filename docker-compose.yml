@@ -5,9 +5,10 @@ services:
     container_name: linkshare
     environment:
       - PYTHONUNBUFFERED=1
+      - ENVIRONMENT="production"
     working_dir: /code
     networks:
-      - nginx_default
+      - proxy-manager_default
     ports:
       - 127.0.0.1:8000:80
     restart: unless-stopped
@@ -16,5 +17,5 @@ services:
     #   - ./data:/code/data
 
 networks:
-  nginx_default:
+  proxy-manager_default:
     external: true
