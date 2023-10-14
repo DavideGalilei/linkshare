@@ -143,6 +143,19 @@ body {
   filter: brightness(1.5);
 }
 
+.sender {
+  display: flex;
+  justify-content: left;
+  flex-direction: row;
+  gap: 0.5rem;
+  width: 100%;
+  background-color: var(--comment);
+  color: var(--foreground);
+  padding: 0.5em;
+  font-size: x-small;
+  border-radius: 0 0 0.3rem 0.3rem;
+}
+
 .send-button {
   display: flex;
   justify-content: center;

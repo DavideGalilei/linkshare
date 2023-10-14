@@ -67,8 +67,11 @@ class Rendezvous:
             n=len(self.streams),
         )
 
-    async def broadcast(self, data: dict):
+    async def broadcast(self, this: "Client", data: dict):
         for client in self.streams.values():
+            if client.token == this.token:
+                continue
+
             try:
                 await client.conn.send_json(data)
             except Exception as e:
@@ -230,9 +233,11 @@ async def new(ws: WebSocket):
                 case "content":
                     await trigger_disconnect()
                     await this.rendezvous.broadcast(
+                        this,
                         {
                             "@type": "content",
-                            "data": data["content"],
+                            "content": data["content"],
+                            "sender": this.token,
                         }
                     )
                 case unknown:

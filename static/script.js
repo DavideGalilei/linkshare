@@ -32,6 +32,36 @@ function cleanErrors() {
   errors.forEach((e) => e?.remove());
 }
 
+async function addMessage(content, sender) {
+  let container = action.querySelector(".content-container");
+  container.classList.remove("spin");
+
+  container.querySelector(".waiting-for-link")?.remove();
+
+  let pre = document.createElement("pre");
+  let copyButton = document.createElement("button");
+  let code = document.createElement("code");
+
+  let senderNotice = document.createElement("div");
+  senderNotice.classList.add("sender");
+  const date = new Date();
+  const time = `${date.getHours()}:${date.getMinutes()}`;
+  senderNotice.textContent = `[${time}] Sent by: ${sender}`;
+
+  copyButton.classList.add("copy-button");
+  copyButton.textContent = "Copy";
+  copyButton.addEventListener("click", async () => {
+    await navigator.clipboard.writeText(content);
+    showToast(".action", "Copied to clipboard!");
+  });
+  pre.append(copyButton);
+  pre.append(code);
+  pre.append(senderNotice);
+  container.append(pre);
+  code.textContent = content;
+  hljs.highlightElement(code);
+}
+
 async function disconnect() {
   if (ws) {
     try {
@@ -68,6 +98,7 @@ function connect() {
       switch (data["@type"]) {
         case "refresh": {
           cleanErrors();
+          pairSent = false;
           action.innerHTML = "";
           appState.token = data["token"];
           makeQR(appState.token);
@@ -98,6 +129,7 @@ function connect() {
                 content: notepad.value,
               })
             );
+            await addMessage(notepad.value, "You");
 
             notepad.value = "";
             // action.innerHTML = "";
@@ -117,28 +149,11 @@ function connect() {
           break;
         }
         case "content": {
-          let container = action.querySelector(".content-container");
-          container.classList.remove("spin");
-
-          container.querySelector(".waiting-for-link")?.remove();
-
-          let pre = document.createElement("pre");
-          let copyButton = document.createElement("button");
-          let code = document.createElement("code");
-          copyButton.classList.add("copy-button");
-          copyButton.innerText = "Copy";
-          copyButton.addEventListener("click", async () => {
-            await navigator.clipboard.writeText(data["data"]);
-            showToast(".action", "Copied to clipboard!");
-          });
-          pre.append(copyButton);
-          pre.append(code);
-          container.append(pre);
-          code.textContent = data["data"];
-          hljs.highlightElement(code);
+          await addMessage(data["content"], data["sender"]);
           break;
         }
         case "code-not-found": {
+          pairSent = false;
           cleanErrors();
           let elem = getTemplate("code-not-found");
           action.appendChild(elem);
@@ -220,6 +235,7 @@ const throttle = (callback, time) => {
 let qrScanner;
 let scanner;
 let scanButton;
+let pairSent = false;
 async function makeQR(token) {
   if (!token) {
     console.log("No token found...");
@@ -278,6 +294,11 @@ async function makeQR(token) {
   }
 
   async function callback(token) {
+    if (pairSent) {
+      return;
+    }
+    pairSent = true;
+
     if (token === appState.token) {
       cleanErrors();
       action.appendChild(getTemplate("this-is-your-code"));
