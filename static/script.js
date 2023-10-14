@@ -319,10 +319,10 @@ async function makeQR(token) {
       center.append(scanner);
       qrScanner = new QrScanner(
         scanner,
-        async (result) => {
+        result => throttle(async() => {
           console.log("decoded qr code: ", result);
           await callback(result["data"]); // scanned token
-        },
+        }, 1000),
         {
           returnDetailedScanResult: true,
           highlightScanRegion: true,
