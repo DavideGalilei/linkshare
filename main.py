@@ -80,9 +80,9 @@ class Rendezvous:
             logger.error("Ignoring {e}", e)
 
         # If there is only one stream left, dispose it too
-        if len(self.streams) == 1:
-            for client in self.streams.values():
-                await self.dispose(client)
+        # if len(self.streams) == 1:
+        #     for client in self.streams.values():
+        #         await self.dispose(client)
 
 
 @dataclass(init=True, repr=True)
