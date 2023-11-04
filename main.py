@@ -24,7 +24,7 @@ if ENVIRONMENT not in SHOW_DOCS_ENVIRONMENT:
     app_configs["openapi_url"] = None
     app_configs["docs_url"] = None
     app_configs["redoc_url"] = None
-    app_configs[" swagger_ui_oauth2_redirect_url"] = None
+    app_configs["swagger_ui_oauth2_redirect_url"] = None
 
 
 app = FastAPI(
