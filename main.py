@@ -40,11 +40,12 @@ INACTIVITY_TIMEOUT = config(
     default=timedelta(minutes=5).total_seconds(),
 )
 KEY_LENGTH = config("KEY_LENGTH", cast=int, default=8)
+KEY_CHARS = config("KEY_CHARS", cast=str, default=string.ascii_uppercase + string.digits + "()[]{}+!?$=#@")
 
 
 def generate_token(length: int = KEY_LENGTH) -> str:
     return "".join(
-        secrets.choice((string.ascii_uppercase + string.digits + "()[]{}+!?$=#@"))
+        secrets.choice(KEY_CHARS)
         for _ in range(length)
     )
 
