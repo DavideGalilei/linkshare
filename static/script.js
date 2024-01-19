@@ -3,6 +3,10 @@ import hljs from "https://unpkg.com/@highlightjs/cdn-assets@11.8.0/es/highlight.
 
 hljs.safeMode();
 
+// https://host/path#123456
+const baseUrl = new URL(window.location.href);
+baseUrl.search = "";
+
 let qr = document.getElementById("qr");
 const action = document.querySelector(".action");
 let appState = {
@@ -101,7 +105,15 @@ function connect() {
           pairSent = false;
           action.innerHTML = "";
           appState.token = data["token"];
-          makeQR(appState.token);
+
+          const thisUrl = new URL(window.location.href);
+          if (thisUrl.hash) {
+            callback(thisUrl.hash.slice(1).toUpperCase());
+            window.history.pushState("", document.title, window.location.pathname);
+          } else {
+            makeQR(appState.token);
+          }
+
           qr?.animateQRCode(FadeInTopDown);
           break;
         }
@@ -236,6 +248,31 @@ let qrScanner;
 let scanner;
 let scanButton;
 let pairSent = false;
+
+async function callback(token) {
+  if (pairSent) {
+    return;
+  }
+  pairSent = true;
+
+  if (token === appState.token) {
+    cleanErrors();
+    action.appendChild(getTemplate("this-is-your-code"));
+    return;
+  }
+
+  console.log("Sending pair request", ws);
+  await ws.send(
+    JSON.stringify({
+      "@type": "pair",
+      target: token,
+    })
+  );
+}
+
+/**
+ * @param {string} token
+ */
 async function makeQR(token) {
   if (!token) {
     console.log("No token found...");
@@ -249,7 +286,13 @@ async function makeQR(token) {
 
   qr = document.createElement("qr-code");
   qr.setAttribute("id", "qr");
-  qr.setAttribute("contents", token);
+
+  const url = new URL(baseUrl);
+  url.hash = token;
+
+  // qr.setAttribute("contents", token);
+  qr.setAttribute("contents", url.href);
+
   qr.setAttribute("module-color", "black");
   qr.setAttribute("position-ring-color", "black");
   qr.setAttribute("position-center-color", "black");
@@ -293,27 +336,6 @@ async function makeQR(token) {
     tokenElem.setSelectionRange(0, tokenElem.value.length);
   }
 
-  async function callback(token) {
-    if (pairSent) {
-      return;
-    }
-    pairSent = true;
-
-    if (token === appState.token) {
-      cleanErrors();
-      action.appendChild(getTemplate("this-is-your-code"));
-      return;
-    }
-
-    console.log("Sending pair request", ws);
-    await ws.send(
-      JSON.stringify({
-        "@type": "pair",
-        target: token,
-      })
-    );
-  }
-
   async function done() {
     await callback(input.value.trim().toUpperCase());
   }
@@ -342,7 +364,9 @@ async function makeQR(token) {
         scanner,
         result => throttle(async() => {
           console.log("decoded qr code: ", result);
-          await callback(result["data"]); // scanned token
+          const url = new URL(result["data"]);
+          console.log("url: ", url);
+          await callback(url.hash.slice(1).toUpperCase()); // scanned token
         }, 1000),
         {
           returnDetailedScanResult: true,

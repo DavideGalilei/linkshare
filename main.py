@@ -14,7 +14,7 @@ from starlette.config import Config
 from starlette.staticfiles import StaticFiles
 from starlette.websockets import WebSocketDisconnect
 
-config = Config(".env")
+config = Config(".env", environ={"ENV_FILE": ".env"})
 
 ENVIRONMENT = config("ENVIRONMENT", cast=str, default="production")
 SHOW_DOCS_ENVIRONMENT = ("local", "staging")
@@ -41,6 +41,13 @@ INACTIVITY_TIMEOUT = config(
 )
 KEY_LENGTH = config("KEY_LENGTH", cast=int, default=8)
 KEY_CHARS = config("KEY_CHARS", cast=str, default=string.ascii_uppercase + string.digits + "()[]{}+!?$=#@")
+
+
+logger.info("Starting server in {environment} environment", environment=ENVIRONMENT)
+logger.info("Rate limit: {rate}", rate=rate)
+logger.info("Inactivity timeout: {timeout}", timeout=INACTIVITY_TIMEOUT)
+logger.info("Key length: {length}", length=KEY_LENGTH)
+logger.info("Key chars: {chars}", chars=KEY_CHARS)
 
 
 def generate_token(length: int = KEY_LENGTH) -> str:
