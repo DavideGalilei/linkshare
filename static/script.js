@@ -109,7 +109,7 @@ function connect() {
           const thisUrl = new URL(window.location.href);
           if (thisUrl.hash) {
             callback(thisUrl.hash.slice(1).toUpperCase());
-            window.history.pushState("", document.title, window.location.pathname);
+            window.history.replaceState({}, document.title, thisUrl.pathname);
           } else {
             makeQR(appState.token);
           }
