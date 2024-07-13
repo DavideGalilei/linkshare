@@ -16,7 +16,7 @@ WORKDIR /code
 COPY pyproject.toml /code/
 COPY poetry.lock /code/
 RUN poetry config virtualenvs.create false
-RUN poetry install --no-dev --no-interaction --no-ansi --no-cache
+RUN poetry install --no-dev --no-interaction --no-ansi --no-cache --no-root
 
 EXPOSE 80
 
